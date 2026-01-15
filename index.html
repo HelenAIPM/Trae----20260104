@@ -1,0 +1,2337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>患者管理平台 - 量表详情</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            border-radius: 4px;
+            width: 800px; /* Adjust as needed */
+            max-width: 90%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .modal-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16px;
+            color: #333;
+            /* border-bottom: 1px solid #e6e6e6; Optional, image doesn't explicitly show line but typical modals have it or just space */
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 20px;
+            color: #909399;
+        }
+
+        .modal-body {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            display: flex;
+            justify-content: flex-end;
+            /* border-top: 1px solid #e6e6e6; */
+        }
+
+        /* Modal Form Elements */
+        .modal-label {
+            font-size: 14px;
+            color: #606266;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .modal-label .required {
+            color: #f56c6c;
+            margin-right: 4px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .radio-btn {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+            color: #606266;
+        }
+        
+        /* Custom Radio Style similar to image */
+        .radio-btn input {
+            display: none;
+        }
+        
+        .radio-btn-inner {
+            width: 16px;
+            height: 16px;
+            border: 1px solid #dcdfe6;
+            border-radius: 50%;
+            margin-right: 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .radio-btn.active .radio-btn-inner {
+            border-color: #409eff;
+            background-color: #fff;
+        }
+
+        .radio-btn.active .radio-btn-inner::after {
+            content: "";
+            width: 8px;
+            height: 8px;
+            background-color: #409eff;
+            border-radius: 50%;
+        }
+        
+        .radio-box-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .range-input-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Custom Unlimited Checkbox Styles */
+        .unlimited-checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin-top: 8px;
+            user-select: none;
+        }
+
+        .unlimited-checkbox-input {
+            display: none;
+        }
+
+        .unlimited-checkbox-visual {
+            width: 14px;
+            height: 14px;
+            border: 1px solid #dcdfe6;
+            border-radius: 2px;
+            margin-right: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            background: #fff;
+        }
+
+        .unlimited-checkbox-input:checked + .unlimited-checkbox-visual {
+            background-color: #409eff;
+            border-color: #409eff;
+        }
+
+        .unlimited-checkbox-visual::after {
+            content: "";
+            width: 3px;
+            height: 7px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            display: none;
+            margin-top: -2px;
+        }
+
+        .unlimited-checkbox-input:checked + .unlimited-checkbox-visual::after {
+            display: block;
+        }
+
+        .unlimited-text {
+            font-size: 14px;
+            color: #606266;
+            transition: color 0.2s;
+        }
+
+        .unlimited-checkbox-input:checked ~ .unlimited-text {
+            color: #409eff;
+        }
+
+        .unlimited-checkbox-wrapper:hover .unlimited-checkbox-visual {
+            border-color: #409eff;
+        }
+
+        .range-input.is-unlimited {
+            color: #c0c4cc;
+            background-color: #f5f7fa;
+            border-color: #e4e7ed;
+        }
+
+        .radio-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 120px;
+            height: 40px;
+            border: 1px solid #409eff;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #fff;
+            color: #409eff;
+            font-size: 14px;
+        }
+
+        .radio-box input {
+            display: none;
+        }
+
+        .radio-circle-outer {
+            width: 16px;
+            height: 16px;
+            border: 1px solid #409eff; /* Default blue border since it's the selected style */
+            border-radius: 50%;
+            margin-right: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #409eff; /* Filled blue for checked state */
+        }
+
+        .radio-circle-inner {
+            width: 6px;
+            height: 6px;
+            background-color: #fff;
+            border-radius: 50%;
+        }
+
+        /* Live Preview Styles */
+        .live-preview-container {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fb;
+            border: 1px solid #ebeef5;
+            border-radius: 4px;
+        }
+        
+        .live-preview-label {
+            font-size: 14px;
+            color: #606266;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .preview-input-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .preview-input {
+            flex: 1;
+            height: 40px;
+            border: 1px solid #dcdfe6;
+            border-right: none;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+            padding: 0 15px;
+            font-size: 14px;
+            color: #606266;
+            background-color: #fff;
+            outline: none;
+        }
+        
+        .preview-input::placeholder {
+            color: #c0c4cc;
+        }
+
+        /* Standardize placeholder color for modal inputs */
+        .modal-input::placeholder {
+            color: #c0c4cc;
+        }
+
+        .preview-input.black-placeholder::placeholder {
+            color: #333 !important;
+            opacity: 1; /* Firefox fix */
+        }
+
+        .preview-suffix {
+            height: 40px;
+            padding: 0 15px;
+            background-color: #f5f7fa;
+            border: 1px solid #dcdfe6;
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+            color: #909399;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            min-width: 60px;
+            justify-content: center;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: #2b3648;
+            color: #b0b8c5;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #2b3648;
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .menu-item:hover {
+            background-color: #364155;
+            color: #fff;
+        }
+
+        .menu-item.active {
+            color: #fff;
+        }
+
+        .submenu {
+            background-color: #1f2633;
+        }
+
+        .submenu-item {
+            padding: 12px 20px 12px 40px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .submenu-item:hover {
+            color: #fff;
+        }
+
+        .submenu-item.active {
+            color: #409eff;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            height: 50px;
+            background-color: #fff;
+            border-bottom: 1px solid #e6e6e6;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .breadcrumb {
+            color: #999;
+        }
+        
+        .breadcrumb span {
+            margin: 0 5px;
+        }
+
+        .breadcrumb .current {
+            color: #333;
+        }
+
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 4px;
+            padding: 30px;
+            min-height: 100%;
+            position: relative;
+        }
+
+        /* Form Layout */
+        .form-row {
+            display: flex;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .form-label {
+            width: 80px;
+            text-align: right;
+            margin-right: 20px;
+            font-size: 14px;
+            color: #606266;
+            font-weight: bold;
+        }
+
+        .form-input-wrapper {
+            width: 400px;
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 36px;
+            padding: 0 10px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            border-color: #409eff;
+        }
+
+        .char-count {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #909399;
+            font-size: 12px;
+        }
+
+        .select-input {
+            width: 100%;
+            height: 36px;
+            padding: 0 10px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #606266;
+            font-size: 14px;
+        }
+
+        .btn-blue-outline {
+            padding: 6px 15px;
+            border: 1px solid #409eff;
+            color: #409eff;
+            background: #ecf5ff;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* Editor Area */
+        .editor-area {
+            display: flex;
+            margin-top: 40px;
+            gap: 40px;
+        }
+
+        /* Phone Preview */
+        .phone-preview {
+            width: 375px;
+            background-color: #f7f8fa;
+            border: 1px solid #e4e7ed;
+            border-radius: 40px; /* More rounded as per typical phone frames */
+            padding: 20px;
+            min-height: 700px;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+        }
+
+        .phone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #000;
+            padding: 0 10px;
+        }
+
+        .phone-status-icons {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .phone-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 0 5px;
+            height: 44px;
+        }
+
+        .nav-back {
+            font-size: 24px;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .nav-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #000;
+        }
+
+        .nav-menu-capsule {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.6);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 16px;
+            height: 30px;
+            padding: 0 10px;
+            gap: 10px;
+        }
+
+        .nav-menu-dots {
+            font-weight: bold;
+            font-size: 18px;
+            line-height: 0;
+            margin-top: -8px; /* Visual adjustment */
+        }
+
+        .nav-menu-divider {
+            width: 1px;
+            height: 16px;
+            background: rgba(0,0,0,0.15);
+        }
+
+        .nav-menu-circle {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .nav-menu-circle::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background: #333;
+            border-radius: 50%;
+        }
+
+        .phone-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            margin-bottom: 16px;
+        }
+
+        .patient-info-box {
+            border: 1px solid #ebedf0;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #323233;
+            background: #fff;
+            margin-bottom: 10px;
+        }
+
+        .info-desc {
+            color: #969799;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .add-field-btn-large {
+            width: 240px;
+            margin: 0 auto;
+            height: 45px;
+            border: 1px solid #409eff;
+            color: #409eff;
+            background: #fff;
+            border-radius: 22.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .add-field-btn-large span {
+            margin-right: 5px;
+            font-size: 18px;
+        }
+
+        /* Phone Preview Field Styles */
+        .preview-field-label {
+            font-size: 15px;
+            color: #323233;
+            margin-bottom: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        .preview-field-label .required {
+            color: #ee0a24;
+            margin-right: 4px;
+            font-size: 14px;
+        }
+        .preview-field-input-wrapper {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ebedf0;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .preview-field-input {
+            flex: 1;
+            height: 44px;
+            border: none;
+            padding: 0 12px;
+            font-size: 14px;
+            outline: none;
+            color: #323233;
+        }
+        .preview-field-input::placeholder {
+            color: #c8c9cc;
+        }
+        .preview-field-suffix {
+            height: 44px;
+            padding: 0 12px;
+            background: #f7f8fa;
+            color: #646566;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            border-left: 1px solid #ebedf0;
+            white-space: nowrap;
+        }
+
+        /* Right Panel - Component Library */
+        .component-library {
+            width: 650px;
+        }
+
+        .library-box {
+            border: 1px solid #e4e7ed;
+            border-radius: 4px;
+            padding: 20px;
+            background-color: #fff; /* Initially white, but user asked for gray area containment */
+            /* Wait, the image shows a border around "New Custom Fields". The user wants "Indicator Library" INSIDE this box. */
+        }
+        
+        /* The user said "gray area". In the image, the box containing the buttons has a border. 
+           I will make a unified container. */
+        .unified-library-container {
+            border: 1px solid #ebeef5;
+            border-radius: 6px;
+            padding: 20px;
+            /* Using a subtle background if needed, but standard looks like white with border */
+        }
+
+        .lib-section-title {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 15px;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .lib-btn {
+            height: 32px;
+            border: 1px solid #dcdfe6;
+            background-color: #ecf5ff; /* Match light blue background from image */
+            color: #409eff; /* Match blue text from image */
+            border-color: #d9ecff;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 5px;
+        }
+
+        .lib-btn:hover {
+            color: #409eff;
+            border-color: #c6e2ff;
+            background-color: #ecf5ff;
+        }
+
+        /* Specific style for "Single Line Text" as per image - it looks like a standard button but let's ensure we can target it to match */
+        .lib-btn.blue-style {
+            color: #409eff;
+            background-color: #ecf5ff;
+            border-color: #d9ecff; 
+        }
+
+        /* Requirement 2: "Pre-meal Blood Glucose" matches "Single Line Text" */
+        /* In the image, "Single Line Text" (单行文本) looks like:
+           Blue text, Light Blue BG (maybe), Blue Border (maybe).
+           Actually, in the provided image, "Single Line Text" button has blue text and a light blue background.
+           Wait, looking closely at the first row: "Single Line Text", "Multi Line Text", "Single Choice"
+           They all look similar. 
+           I will style them to look active/highlighted as per typical UI libraries (Element UI style).
+        */
+        
+        .lib-btn-primary-ghost {
+            color: #409eff;
+            background-color: #ecf5ff;
+            border: 1px solid #d9ecff;
+        }
+
+        .indicator-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        /* Bottom Actions */
+        .bottom-actions {
+            margin-top: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .action-btn {
+            padding: 9px 25px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .btn-cancel {
+            background: #fff;
+            border: 1px solid #dcdfe6;
+            color: #606266;
+        }
+
+        .btn-save {
+            background: #0088cc; /* Color from image looks like a specific blue */
+            border: 1px solid #0088cc;
+            color: #fff;
+        }
+
+        /* Scoring Section */
+        .scoring-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9fafc;
+            border-radius: 4px;
+        }
+        
+        /* Utility */
+        .mt-20 { margin-top: 20px; }
+
+        /* Toggle Switch Styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+            vertical-align: middle;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #dcdfe6;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: #409eff;
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #409eff;
+        }
+
+        input:checked + .slider:before {
+            -webkit-transform: translateX(20px);
+            -ms-transform: translateX(20px);
+            transform: translateX(20px);
+        }
+
+        /* Rounded sliders */
+        .slider.round {
+            border-radius: 20px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        /* Disabled State for Warning Content */
+        .warning-message-section.is-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            user-select: none;
+        }
+    </style>
+    <style>
+        .indicator-card {
+            border: 1px solid #dcdfe6;
+            background: #fff;
+            display: flex;
+            flex-direction: row;
+            transition: all 0.3s;
+            height: 110px; /* Fixed height for consistency */
+        }
+        
+        .indicator-card:hover {
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+        }
+
+        .card-left {
+            flex: 1.8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .indicator-name-tag {
+            background: #e6f1fc;
+            border: 1px solid #a3d3ff;
+            color: #409eff;
+            height: 32px; /* Match lib-btn height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 90%;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .card-dept {
+            font-size: 13px;
+            color: #606266;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-right {
+            flex: 1;
+            border-left: 1px solid #dcdfe6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .action-link {
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+
+        .action-link.edit { color: #409eff; }
+        .action-link.delete { color: #f56c6c; }
+        .action-link.view { color: #409eff; }
+        
+        .action-link:hover { opacity: 0.8; }
+        
+        /* New 3-column grid layout */
+        .indicator-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .create-indicator-btn-inline {
+            padding: 6px 20px;
+            border: 1px solid #409eff;
+            color: #409eff;
+            background: #fff;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 10px;
+        }
+
+        .create-indicator-btn-inline span {
+            margin-right: 4px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .create-indicator-btn-inline:hover {
+            background: #ecf5ff;
+        }
+
+        .card-icon-container {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .card-icon {
+            cursor: pointer;
+            color: #909399;
+            display: flex;
+            align-items: center;
+            padding: 2px;
+            transition: color 0.2s;
+        }
+
+        .card-icon:hover {
+            color: #409eff;
+        }
+
+        .key-indicator-tag {
+            border: 1px solid #ffccc7;
+            color: #ff4d4f;
+            background: #fff;
+            font-size: 12px;
+            padding: 0 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+            display: inline-block;
+            height: 20px;
+            line-height: 18px;
+            vertical-align: middle;
+        }
+
+        .card-icon.delete-icon:hover {
+            color: #f56c6c;
+        }
+        
+        .card-icon.move-icon {
+            cursor: move;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header" style="display: flex; align-items: center;">
+            <!-- Figure 2 Style Icon -->
+            <svg viewBox="0 0 1024 1024" width="24" height="24" style="margin-right: 10px;">
+                <circle cx="512" cy="512" r="448" fill="#409eff" stroke="#fff" stroke-width="40"/>
+                <path d="M512 256v512M256 512h512" stroke="#fff" stroke-width="80" stroke-linecap="round"/>
+            </svg>
+            患者管理平台
+        </div>
+        <div class="menu-item">
+            <span style="display: flex; align-items: center;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="#fff" style="margin-right: 8px;">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                用户中心
+            </span>
+            <span>v</span>
+        </div>
+        <div class="menu-item">
+            <span style="display: flex; align-items: center;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="#fff" style="margin-right: 8px;">
+                    <path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/>
+                </svg>
+                医生中心
+            </span>
+            <span>v</span>
+        </div>
+        <div class="menu-item">
+            <span style="display: flex; align-items: center;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="#fff" style="margin-right: 8px;">
+                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                </svg>
+                内容中心
+            </span>
+            <span>v</span>
+        </div>
+        <div class="menu-item">
+            <span style="display: flex; align-items: center;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="#fff" style="margin-right: 8px;">
+                    <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+                </svg>
+                运营中心
+            </span>
+            <span>v</span>
+        </div>
+        <div class="menu-item">
+            <span style="display: flex; align-items: center;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="#fff" style="margin-right: 8px;">
+                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                </svg>
+                权限中心
+            </span>
+            <span>v</span>
+        </div>
+        <div class="menu-item active">
+            <span style="display: flex; align-items: center;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="#fff" style="margin-right: 8px;">
+                    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L5.09 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.04.64.09.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                </svg>
+                配置中心
+            </span>
+            <span>^</span>
+        </div>
+        <div class="submenu">
+            <div class="submenu-item active">量表管理</div>
+            <div class="submenu-item">健康宣教管理</div>
+            <div class="submenu-item">随访模板配置</div>
+            <div class="submenu-item">患者标签管理</div>
+            <div class="submenu-item">自动化规则引擎</div>
+        </div>
+
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="breadcrumb">
+                ≡ &nbsp; <span>配置中心</span> / <span class="current">量表详情</span>
+            </div>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="content-scroll">
+            <div class="card">
+                <!-- Form Fields -->
+                <div class="form-row">
+                    <div class="form-label">量表名称</div>
+                    <div class="form-input-wrapper">
+                        <input type="text" class="form-input" value="未命名">
+                        <span class="char-count">3/50</span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">分组</div>
+                    <div class="form-input-wrapper">
+                        <div class="select-input">
+                            <span>未分组</span>
+                            <span>v</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">所属科室</div>
+                    <div class="form-input-wrapper">
+                        <div class="select-input">
+                            <span>全部科室</span>
+                            <span>v</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">标签</div>
+                    <div style="display: flex; align-items: center;">
+                        <span style="font-size: 14px; color: #999; margin-right: 10px;">请选择标签</span>
+                        <button class="btn-blue-outline">选择</button>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-label">关键指标</div>
+                    <div id="keyIndicatorsDisplay" style="font-size: 14px; color: #333; margin-left: 10px; flex: 1;"></div>
+                </div>
+
+                <div class="form-row" style="align-items: flex-start;">
+                    <div class="form-label" style="color: #606266; white-space: nowrap;">表单内容</div>
+                    
+                    <div class="editor-area" style="margin-top: 0;">
+                        <!-- Phone Preview -->
+                        <div class="phone-preview">
+                            <div class="phone-header">
+                                <span>9:41</span>
+                                <div class="phone-status-icons">
+                                    <svg width="18" height="12" viewBox="0 0 18 12" fill="none">
+                                        <path d="M1 9.5C1 10.3284 1.67157 11 2.5 11H4V7.5H1V9.5ZM5.5 11H8.5V5H5.5V11ZM10 11H13V2.5H10V11ZM14.5 11H17.5V0H14.5V11Z" fill="#000"/>
+                                    </svg>
+                                    <svg width="18" height="12" viewBox="0 0 20 14" fill="none" style="margin-left: 2px;">
+                                        <path d="M10 13C10.36 13 10.69 12.92 11 12.78V10.6C10.69 10.85 10.36 11 10 11C7.24 11 5 8.76 5 6C5 3.24 7.24 1 10 1C12.76 1 15 3.24 15 6C15 6.47 14.92 6.91 14.78 7.33L16.2 8.75C16.71 7.94 17 6.99 17 6C17 2.13 13.87 -1 10 -1C6.13 -1 3 2.13 3 6C3 9.87 6.13 13 10 13Z" fill="#000"/>
+                                        <path d="M10 8.5C11.3807 8.5 12.5 7.38071 12.5 6C12.5 4.61929 11.3807 3.5 10 3.5C8.61929 3.5 7.5 4.61929 7.5 6C7.5 7.38071 8.61929 8.5 10 8.5Z" fill="#000"/>
+                                    </svg>
+                                    <svg width="22" height="12" viewBox="0 0 24 12" fill="none" style="margin-left: 2px;">
+                                        <rect x="1" y="1" width="18" height="10" rx="2" stroke="#000" stroke-width="1.5"/>
+                                        <rect x="3" y="3" width="12" height="6" rx="1" fill="#000"/>
+                                        <path d="M21 4V8" stroke="#000" stroke-width="1.5" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="phone-nav">
+                                <div class="nav-back">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                        <path d="M15 18L9 12L15 6" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="nav-title">未命名</div>
+                                <div class="nav-menu-capsule">
+                                    <div class="nav-menu-dots">...</div>
+                                    <div class="nav-menu-divider"></div>
+                                    <div class="nav-menu-circle"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="phone-card">
+                                <div class="patient-info-box">患者姓名、患者性别、患者年龄</div>
+                                <div class="info-desc">说明：每个表单，已默认展示患者的姓名、性别、年龄，无需配置。</div>
+                            </div>
+
+                            <div style="margin-top: 40px; text-align: center;">
+                                <button class="add-field-btn-large">
+                                    <span>+</span> 选择自定义字段
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Component Library (Right Panel) -->
+                        <div class="component-library">
+                            <!-- Requirement 1: Move "Indicator Library" into the gray area (unified container) -->
+                            <div class="unified-library-container">
+                                
+                                <div style="display: flex; gap: 30px; margin-bottom: 20px;">
+                                    <!-- Left Column: Custom Fields -->
+                                    <div style="flex: 1;">
+                                        <div class="lib-section-title">自定义字段：</div>
+                                        <div class="btn-grid">
+                                            <!-- Requirement 2: Match "Pre-meal Blood Glucose" to "Single Line Text" -->
+                                            <!-- "Single Line Text" has a specific style in the image. I'll make it the 'reference' style -->
+                                            <button class="lib-btn">单行文本</button>
+                                            <button class="lib-btn">多行文本</button>
+                                            <button class="lib-btn">单选</button>
+                                            <button class="lib-btn">多选</button>
+                                            <button class="lib-btn">滑动分值</button>
+                                            <button class="lib-btn">单选分值</button>
+                                            <button class="lib-btn">日期</button>
+                                            <button class="lib-btn">数值</button>
+                                            <button class="lib-btn">图片</button>
+                                            <button class="lib-btn">分组文字</button>
+                                            <button class="lib-btn">表单介绍</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right Column: Field Groups -->
+                                    <div style="flex: 1;">
+                                        <div class="lib-section-title">字段组：</div>
+                                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                            <button class="lib-btn" style="width: auto; padding: 0 15px;">身高、体重、BMI</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Moved Indicator Library Here as requested -->
+                                <div style="display: flex; align-items: center; margin-top: 15px; margin-bottom: 15px;">
+                                    <div class="lib-section-title" style="margin: 0; font-size: 14px; color: #333; font-weight: bold;">关键指标库：</div>
+                                    <div id="createIndicatorBtn" class="create-indicator-btn-inline">
+                                        <span>+</span> 创建关键指标
+                                    </div>
+                                </div>
+
+                                <div class="indicator-row" id="indicatorContainer">
+                                    <!-- Pre-defined Mock Indicators -->
+                                    <div class="indicator-card" data-owner="true" data-name="餐前血糖" data-unit="mmol/L">
+                                        <div class="card-icon-container">
+                                            <span class="card-icon delete-icon" title="直接删除">
+                                                <svg viewBox="0 0 1024 1024" width="14" height="14" fill="currentColor">
+                                                    <path d="M704 224h-128V160c0-17.6-14.4-32-32-32h-64c-17.6 0-32 14.4-32 32v64H320c-17.6 0-32 14.4-32 32v32h448v-32c0-17.6-14.4-32-32-32zM352 384v448c0 17.6 14.4 32 32 32h256c17.6 0 32-14.4 32-32V384H352z m128 352c0 8.8-7.2 16-16 16s-16-7.2-16-16V448c0-8.8 7.2-16 16-16s16 7.2 16 16v288z m96 0c0 8.8-7.2 16-16 16s-16-7.2-16-16V448c0-8.8 7.2-16 16-16s16 7.2 16 16v288z" />
+                                                </svg>
+                                            </span>
+                                            <span class="card-icon move-icon" title="上下平移">
+                                                <svg viewBox="0 0 1024 1024" width="14" height="14" fill="currentColor">
+                                                    <path d="M512 832c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32s32 14.3 32 32v576c0 17.7-14.3 32-32 32z"/>
+                                                    <path d="M512 224l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l182.6-182.6c12.5-12.5 32.8-12.5 45.3 0l182.6 182.6c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L512 224zM512 832l160-160c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3l-182.6 182.6c-12.5-12.5-32.8 12.5-45.3 0l-182.6-182.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L512 832z"/>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                        <div class="card-left">
+                                            <div class="indicator-name-tag">餐前血糖</div>
+                                            <div class="card-dept">· 内分泌科</div>
+                                        </div>
+                                        <div class="card-right">
+                                            <span class="action-link edit">编辑</span>
+                                            <span class="action-link delete">删除</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="indicator-card" data-owner="false" data-name="血压" data-unit="mmHg">
+                                        <div class="card-left">
+                                            <div class="indicator-name-tag">血压</div>
+                                            <div class="card-dept">· 心内科</div>
+                                        </div>
+                                        <div class="card-right">
+                                            <span class="action-link view">查看</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Bottom Actions -->
+                            <div class="bottom-actions">
+                                <button class="action-btn btn-cancel">取消</button>
+                                <button class="action-btn btn-save">保存</button>
+                            </div>
+                        </div>
+
+                        <!-- Annotation for Indicator Library -->
+                        <div class="common-annotation-panel" style="width: 900px; margin-top: 290px; height: fit-content;">
+                            <div style="font-weight: bold; margin-bottom: 15px; font-size: 24px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; color: #ffd04b;">指标库在本平台复用逻辑</div>
+                            <div style="margin-top: 5px; line-height: 1.6;">1、当[用户]创建了新的指标后，该医院的平台[其他用户]登录均可见，均可使用。</div>
+                            <div style="margin-top: 5px; line-height: 1.6;">2、对于一个指标：[创建者]拥有编辑和删除权限，删除时需二次确认；其他[用户]仅拥有查看、使用的权限。</div>
+                            <div style="margin-top: 5px; line-height: 1.6;">3、[编辑]后保存了的指标，不影响已经下发给患者的量表？？！！(需要和后端研发进行确认，现有的量表逻辑)</div>
+                            <div style="margin-top: 5px; line-height: 1.6;">4、[删除]后的指标，不影响已经下发给患者的量表？？！！(需要和后端研发进行确认，现有的量表逻辑)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scoring (Mockup) -->
+                <div class="scoring-section">
+                    <div style="font-size: 14px; margin-bottom: 10px;">
+                        计分功能 
+                        <span style="display: inline-block; width: 30px; height: 16px; background: #dcdfe6; border-radius: 8px; vertical-align: middle; margin: 0 5px;"></span>
+                        <span style="color: #999;">(计算用户填写完表单得分)</span>
+                    </div>
+                    <div style="font-size: 14px; color: #666;">最高分 0.00，请设置分值区间文案</div>
+                </div>
+
+            </div>
+            
+            <div style="height: 80px;"></div> <!-- Spacer for bottom bar -->
+        </div>
+
+        <!-- Bottom Actions (Moved inside component library above) -->
+    </div>
+
+    <!-- Create Indicator Modal -->
+    <div class="modal-overlay" id="indicatorModal">
+        <div class="modal-wrapper-flex" style="display: flex; align-items: flex-start; gap: 20px;">
+            <div class="modal-content">
+            <div class="modal-header">
+                <div>新增指标</div>
+                <div class="modal-close" id="closeModal">×</div>
+            </div>
+            <div class="modal-body">
+                
+                <!-- Field Type -->
+                <div class="modal-label"><span class="required">*</span>字段类型</div>
+                <div class="radio-box-container">
+                    <label class="radio-box">
+                        <div class="radio-circle-outer">
+                            <div class="radio-circle-inner"></div>
+                        </div>
+                        <input type="radio" name="fieldType" value="numerical" checked>
+                        数值
+                    </label>
+                </div>
+
+                <!-- Flex Row for Name and Unit -->
+                <div style="display: flex; gap: 20px; margin-bottom: 10px;">
+                    <!-- Indicator Name -->
+                    <div style="flex: 1;">
+                        <div class="modal-label"><span class="required">*</span>指标名称</div>
+                        <div class="modal-input-group" style="position: relative;">
+                            <input type="text" class="modal-input" id="indicatorNameInput" placeholder="请输入指标名称" style="width: 100%; height: 36px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; outline: none;">
+                            <span class="modal-char-count" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #909399; font-size: 12px;">0/200</span>
+                        </div>
+                    </div>
+
+                    <!-- Indicator Unit -->
+                    <div style="flex: 1;">
+                        <div class="modal-label"><span class="required">*</span>指标单位</div>
+                        <div class="modal-input-group" style="position: relative;">
+                            <input type="text" class="modal-input" id="indicatorUnitInput" placeholder="请输入指标单位" style="width: 100%; height: 36px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; outline: none;">
+                            <span class="modal-char-count" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #909399; font-size: 12px;">0/20</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Preview Area -->
+                <div class="live-preview-container" style="margin-top: 0;">
+                    <div class="live-preview-label">效果预览</div>
+                    <div class="preview-input-group">
+                        <input type="text" class="preview-input" id="previewInput" placeholder="请输入数字" disabled>
+                        <div class="preview-suffix" id="previewSuffix">单位</div>
+                    </div>
+                </div>
+
+                <!-- Warning Settings -->
+                <div class="warning-settings-section" style="margin-top: 30px;">
+                    <div class="modal-label" id="warningSettingsHeader">预警设置(1)</div>
+                    <div id="warningList">
+                        <!-- Warning Item Template (Default) -->
+                        <div class="warning-item" style="background: #f9fafc; padding: 15px; border-radius: 4px; margin-bottom: 10px; border: 1px solid #ebeef5; position: relative; transition: all 0.3s ease;">
+                             <div style="position: absolute; top: 10px; right: 10px; display: flex; align-items: center; gap: 8px;">
+                                 <!-- Move Up/Down Icon (Sort) -->
+                                 <div class="move-warning-btn" title="长按拖拽排序" style="cursor: pointer; color: #909399; display: flex; align-items: center;">
+                                     <svg viewBox="0 0 1024 1024" width="18" height="18" fill="currentColor">
+                                         <path d="M512 832c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32s32 14.3 32 32v576c0 17.7-14.3 32-32 32z"/>
+                                         <path d="M512 224l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l182.6-182.6c12.5-12.5 32.8-12.5 45.3 0l182.6 182.6c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L512 224zM512 832l160-160c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3l-182.6 182.6c-12.5 12.5-32.8 12.5-45.3 0l-182.6-182.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L512 832z"/>
+                                     </svg>
+                                 </div>
+                                 <div class="delete-warning-btn" style="cursor: pointer; color: #909399; display: flex; align-items: center;">
+                                     <!-- New Trash Icon -->
+                                     <svg viewBox="0 0 1024 1024" width="18" height="18" fill="currentColor">
+                                         <path d="M704 224h-128V160c0-17.6-14.4-32-32-32h-64c-17.6 0-32 14.4-32 32v64H320c-17.6 0-32 14.4-32 32v32h448v-32c0-17.6-14.4-32-32-32zM352 384v448c0 17.6 14.4 32 32 32h256c17.6 0 32-14.4 32-32V384H352z m128 352c0 8.8-7.2 16-16 16s-16-7.2-16-16V448c0-8.8 7.2-16 16-16s16 7.2 16 16v288z m96 0c0 8.8-7.2 16-16 16s-16-7.2-16-16V448c0-8.8 7.2-16 16-16s16 7.2 16 16v288z" />
+                                     </svg>
+                                 </div>
+                             </div>
+                             <div style="display: flex; align-items: flex-start; margin-bottom: 15px;">
+                                <span class="modal-label warning-label-container" style="min-width: 90px; width: auto; margin-bottom: 0; padding-top: 6px; margin-right: 10px;"><span class="warning-index">1. </span>预警设置范围</span>
+                                <div class="range-input-container">
+                                    <div style="display: flex; align-items: center;">
+                                        <input type="text" class="modal-input range-input" style="width: 120px; height: 32px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px;" placeholder="数值">
+                                        <span class="range-unit-display" style="margin-left: 8px; font-size: 14px; color: #606266;"></span>
+                                    </div>
+                                    <label class="unlimited-checkbox-wrapper">
+                                        <input type="checkbox" class="unlimited-checkbox-input">
+                                        <div class="unlimited-checkbox-visual"></div>
+                                        <span class="unlimited-text">不限</span>
+                                    </label>
+                                </div>
+                                <span style="margin: 0 10px; color: #909399; padding-top: 6px;">-</span>
+                                <div class="range-input-container">
+                                    <div style="display: flex; align-items: center;">
+                                        <input type="text" class="modal-input range-input" style="width: 120px; height: 32px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px;" placeholder="数值">
+                                        <span class="range-unit-display" style="margin-left: 8px; font-size: 14px; color: #606266;"></span>
+                                    </div>
+                                    <label class="unlimited-checkbox-wrapper">
+                                        <input type="checkbox" class="unlimited-checkbox-input">
+                                        <div class="unlimited-checkbox-visual"></div>
+                                        <span class="unlimited-text">不限</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; margin-bottom: 15px; margin-top: 15px;">
+                                <span class="modal-label" style="margin-bottom: 0; margin-right: 15px;">预警是否推送提醒医生</span>
+                                <label class="switch">
+                                    <input type="checkbox" class="push-switch" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+
+                            <div class="warning-message-section" style="display: flex; flex-direction: column; transition: opacity 0.3s;">
+                                 <span class="modal-label" style="margin-bottom: 8px;">提醒医生的文案内容<br><span style="font-weight: normal; font-size: 13px; color: #606266;">(当患者输入的数值是在配置的范围内，医生将收到如下的提醒)</span></span>
+                                 <textarea class="modal-input warning-message-input" style="width: 100%; height: 60px; padding: 8px; resize: none; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; outline: none; color: #606266;">[患者姓名 年龄 性别，日期，时间，数值]</textarea>
+                            </div>
+                         </div>
+                    </div>
+                    <button id="addWarningBtn" style="width: 100%; height: 36px; border: 1px dashed #409eff; background: #ecf5ff; color: #409eff; border-radius: 4px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;">
+                        + 增加设置范围
+                    </button>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn btn-cancel" id="cancelModal">取消</button>
+                <button class="action-btn btn-save" id="saveIndicatorBtn">保存</button>
+            </div>
+        </div>
+
+        <style>
+            .common-annotation-panel {
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(10px);
+                padding: 20px;
+                border-radius: 8px;
+                color: #fff;
+                font-size: 21px;
+                line-height: 1.6;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                position: relative;
+            }
+            .common-annotation-panel::before {
+                content: "";
+                position: absolute;
+                top: 30px;
+                left: -20px;
+                width: 0;
+                height: 0;
+                border-top: 20px solid transparent;
+                border-bottom: 20px solid transparent;
+                border-right: 20px solid rgba(0, 0, 0, 0.6);
+            }
+        </style>
+        <!-- Annotation Side Panel -->
+        <div class="common-annotation-panel" id="pushAnnotationPanel" style="width: 900px; margin-top: 0; transition: margin-top 0.1s ease-out;">
+             <div style="font-weight: bold; margin-bottom: 15px; font-size: 24px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; color: #ffd04b;">医生端推送样式示例</div>
+             <div style="margin-bottom: 10px; display: flex;">
+                 <div style="font-weight: bold; white-space: nowrap; margin-right: 5px;">推送标题：</div>
+                 <div style="white-space: nowrap;">[指标名称]预警提醒，来自[患者姓名 年龄 性别]</div>
+             </div>
+             <div style="display: flex;">
+                 <div style="font-weight: bold; white-space: nowrap; margin-right: 5px;">推送内容：</div>
+                 <div style="white-space: nowrap;">[指标名称]，[患者填写的数值]来自[患者姓名 年龄 性别]，[提醒医生的文案内容]，[日期 时间]。请您关注。</div>
+             </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        const createIndicatorBtn = document.getElementById('createIndicatorBtn');
+        const indicatorModal = document.getElementById('indicatorModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelModal = document.getElementById('cancelModal');
+        const saveIndicatorBtn = document.getElementById('saveIndicatorBtn');
+
+        createIndicatorBtn.addEventListener('click', () => {
+            indicatorModal.style.display = 'flex';
+        });
+
+        function closeModalFn() {
+            indicatorModal.style.display = 'none';
+        }
+
+        closeModal.addEventListener('click', closeModalFn);
+        cancelModal.addEventListener('click', closeModalFn);
+
+        saveIndicatorBtn.addEventListener('click', () => {
+            const name = document.getElementById('indicatorNameInput').value.trim();
+            if (!name) {
+                alert('请输入指标名称');
+                return;
+            }
+
+            // Create new card
+            const newCard = document.createElement('div');
+            newCard.className = 'indicator-card';
+            newCard.dataset.owner = 'true';
+            newCard.dataset.name = name;
+            const unitVal = document.getElementById('indicatorUnitInput').value.trim();
+            newCard.dataset.unit = unitVal;
+            
+            newCard.innerHTML = `
+                <div class="card-icon-container">
+                    <span class="card-icon delete-icon" title="直接删除">
+                        <svg viewBox="0 0 1024 1024" width="14" height="14" fill="currentColor">
+                            <path d="M704 224h-128V160c0-17.6-14.4-32-32-32h-64c-17.6 0-32 14.4-32 32v64H320c-17.6 0-32 14.4-32 32v32h448v-32c0-17.6-14.4-32-32-32zM352 384v448c0 17.6 14.4 32 32 32h256c17.6 0 32-14.4 32-32V384H352z m128 352c0 8.8-7.2 16-16 16s-16-7.2-16-16V448c0-8.8 7.2-16 16-16s16 7.2 16 16v288z m96 0c0 8.8-7.2 16-16 16s-16-7.2-16-16V448c0-8.8 7.2-16 16-16s16 7.2 16 16v288z" />
+                        </svg>
+                    </span>
+                    <span class="card-icon move-icon" title="上下平移">
+                        <svg viewBox="0 0 1024 1024" width="14" height="14" fill="currentColor">
+                            <path d="M512 832c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32s32 14.3 32 32v576c0 17.7-14.3 32-32 32z"/>
+                            <path d="M512 224l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l182.6-182.6c12.5-12.5 32.8-12.5 45.3 0l182.6 182.6c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L512 224zM512 832l160-160c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3l-182.6 182.6c-12.5-12.5-32.8 12.5-45.3 0l-182.6-182.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L512 832z"/>
+                        </svg>
+                    </span>
+                </div>
+                <div class="card-left">
+                    <div class="indicator-name-tag">${name}</div>
+                    <div class="card-dept">· 内分泌科</div>
+                </div>
+                <div class="card-right">
+                    <span class="action-link edit">编辑</span>
+                    <span class="action-link delete">删除</span>
+                </div>
+            `;
+            
+            setupIndicatorDrag(newCard);
+            
+            // Capture warnings
+            const warnings = [];
+            document.querySelectorAll('#warningList .warning-item').forEach(item => {
+                const inputs = item.querySelectorAll('.range-input');
+                const checkboxes = item.querySelectorAll('.unlimited-checkbox-input');
+                const minInput = inputs[0];
+                const maxInput = inputs[1];
+                const minCheckbox = checkboxes[0];
+                const maxCheckbox = checkboxes[1];
+                const messageInput = item.querySelector('.warning-message-input');
+                const pushCheckbox = item.querySelector('.push-switch');
+                
+                const minVal = minCheckbox.checked ? '不限' : minInput.value.trim();
+                const maxVal = maxCheckbox.checked ? '不限' : maxInput.value.trim();
+                const message = messageInput.value.trim();
+                const push = pushCheckbox ? pushCheckbox.checked : false;
+                
+                // Save if there's any data
+                if (minVal || maxVal || message) {
+                    warnings.push({
+                        min: minVal,
+                        max: maxVal,
+                        message: message,
+                        push: push
+                    });
+                }
+            });
+            if (warnings.length > 0) {
+                newCard.dataset.warnings = JSON.stringify(warnings);
+            }
+            
+            // Find container
+            const container = document.getElementById('indicatorContainer');
+            
+            // Logic: Owner indicators (Edit/Delete) must always be before Non-Owner indicators (View Details)
+            // Find the first non-owner card to insert before
+            let referenceNode = null;
+            // Convert HTMLCollection to Array to use array methods or just loop
+            for (let i = 0; i < container.children.length; i++) {
+                const child = container.children[i];
+                // Check if this child is a non-owner card
+                if (child.dataset.owner !== 'true') {
+                    referenceNode = child;
+                    break;
+                }
+            }
+            
+            if (referenceNode) {
+                container.insertBefore(newCard, referenceNode);
+            } else {
+                container.appendChild(newCard);
+            }
+
+            // Clear inputs and close
+            document.getElementById('indicatorNameInput').value = '';
+            document.getElementById('indicatorUnitInput').value = '';
+            // Reset character counts
+            document.getElementById('indicatorNameInput').nextElementSibling.textContent = '0/200';
+            document.getElementById('indicatorUnitInput').nextElementSibling.textContent = '0/20';
+            
+            // Clear warning items except the first one or reset it?
+            // User didn't specify, but for good UX let's reset the unit display in warnings too
+            document.querySelectorAll('.range-unit-display').forEach(el => el.textContent = '');
+
+            closeModalFn();
+        });
+
+        // --- Permission & Add to Preview Logic Implementation ---
+        const indicatorContainer = document.getElementById('indicatorContainer');
+
+        indicatorContainer.addEventListener('click', (e) => {
+            // Handle Direct Delete Icon (Top-Right) - No Confirmation
+            const deleteIcon = e.target.closest('.delete-icon');
+            if (deleteIcon) {
+                e.stopPropagation();
+                const card = deleteIcon.closest('.indicator-card');
+                if (card) {
+                    card.remove();
+                }
+                return;
+            }
+
+            // Handle Action Links (Edit/Delete/View)
+            const actionLink = e.target.closest('.action-link');
+            if (actionLink) {
+                e.stopPropagation(); // Prevent adding to form
+                
+                const card = actionLink.closest('.indicator-card');
+                const name = card.dataset.name;
+                const unit = card.dataset.unit;
+                const isOwner = card.dataset.owner === 'true';
+
+                if (actionLink.classList.contains('delete')) {
+                    if (confirm(`确认要删除[${name}]指标吗？删除后不可恢复。`)) {
+                        card.remove();
+                    }
+                } else if (actionLink.classList.contains('edit') || actionLink.classList.contains('view')) {
+                    // Open Modal
+                    indicatorModal.style.display = 'flex';
+                    
+                    // Populate Data
+                    document.getElementById('indicatorNameInput').value = name;
+                    document.getElementById('indicatorUnitInput').value = unit;
+                    
+                    // Handle Permissions
+                    const inputs = indicatorModal.querySelectorAll('input, textarea');
+                    const saveBtn = document.getElementById('saveIndicatorBtn');
+                    const warningSection = document.querySelector('.warning-settings-section');
+                    const addWarningBtn = document.getElementById('addWarningBtn');
+
+                    if (!isOwner) {
+                        // View Mode (Read Only)
+                        document.querySelector('.modal-header div:first-child').textContent = '查看指标';
+                        inputs.forEach(input => input.disabled = true);
+                        saveBtn.style.display = 'none';
+                        addWarningBtn.style.display = 'none';
+                        // Disable delete buttons in warning list
+                        document.querySelectorAll('.delete-warning-btn').forEach(btn => btn.style.display = 'none');
+                        
+                    } else {
+                        // Edit Mode
+                        document.querySelector('.modal-header div:first-child').textContent = '编辑指标';
+                        inputs.forEach(input => input.disabled = false);
+                        saveBtn.style.display = 'block';
+                        saveBtn.textContent = '保存修改';
+                        addWarningBtn.style.display = 'flex';
+                        document.querySelectorAll('.delete-warning-btn').forEach(btn => btn.style.display = 'flex');
+                    }
+                }
+                return;
+            }
+
+            // Handle Card Click (Add to Form)
+            const card = e.target.closest('.indicator-card');
+            if (card) {
+                const name = card.dataset.name;
+                const unit = card.dataset.unit || '';
+                
+                let warnings = [];
+                if (card.dataset.warnings) {
+                    try {
+                        warnings = JSON.parse(card.dataset.warnings);
+                    } catch (err) {
+                        console.error('Failed to parse warnings', err);
+                    }
+                }
+                
+                addIndicatorToPreview(name, unit, warnings, true);
+            }
+        });
+
+        // Reset Modal State on Close
+        function resetModalState() {
+            document.querySelector('.modal-header div:first-child').textContent = '新增指标';
+            const inputs = indicatorModal.querySelectorAll('input, textarea');
+            inputs.forEach(input => input.disabled = false);
+            document.getElementById('saveIndicatorBtn').style.display = 'block';
+            document.getElementById('saveIndicatorBtn').textContent = '保存';
+            document.getElementById('addWarningBtn').style.display = 'flex';
+            document.querySelectorAll('.delete-warning-btn').forEach(btn => btn.style.display = 'flex');
+            
+            // Clear inputs
+            document.getElementById('indicatorNameInput').value = '';
+            document.getElementById('indicatorUnitInput').value = '';
+        }
+        
+        // Hook into existing close functions
+        const originalCloseModalFn = closeModalFn;
+        closeModalFn = function() {
+            originalCloseModalFn();
+            setTimeout(resetModalState, 300); // Wait for fade out if any
+        };
+
+
+        // Add to Phone Preview Logic
+        const componentLibrary = document.querySelector('.component-library');
+        componentLibrary.addEventListener('click', (e) => {
+            // Check if clicked element is a lib-btn and NOT the create button
+            if (e.target.classList.contains('lib-btn') && e.target.id !== 'createIndicatorBtn') {
+                const name = e.target.textContent;
+                // Use dataset if available (for new items), otherwise empty string
+                const unit = e.target.dataset.unit || '';
+                
+                let warnings = [];
+                if (e.target.dataset.warnings) {
+                    try {
+                        warnings = JSON.parse(e.target.dataset.warnings);
+                    } catch (err) {
+                        console.error('Failed to parse warnings', err);
+                    }
+                }
+                
+                addIndicatorToPreview(name, unit, warnings);
+            }
+        });
+
+        function updateKeyIndicatorsList() {
+            const display = document.getElementById('keyIndicatorsDisplay');
+            if (!display) return;
+            
+            const keyIndicators = [];
+            document.querySelectorAll('.phone-card').forEach(card => {
+                if (card.dataset.isKeyIndicator === 'true') {
+                    const name = card.dataset.name; 
+                    if (name) keyIndicators.push(`[${name}]`);
+                }
+            });
+            
+            display.textContent = keyIndicators.length > 0 ? keyIndicators.join('、') : '';
+        }
+
+        function addIndicatorToPreview(name, unit, warnings = [], isKeyIndicator = false) {
+            const previewContainer = document.querySelector('.phone-preview');
+            // The button container is the last child usually, or we can find it by class
+            const addBtnContainer = document.querySelector('.add-field-btn-large').parentNode;
+            
+            const card = document.createElement('div');
+            card.className = 'phone-card';
+            card.setAttribute('draggable', 'true'); // Make draggable
+            card.dataset.name = name;
+            card.dataset.isKeyIndicator = isKeyIndicator;
+            
+            // Construct the inner HTML
+            let unitHtml = '';
+            let unitLabel = '';
+            
+            if (unit) {
+                // Suffix block style
+                unitHtml = `<div class="preview-field-suffix">${unit}</div>`;
+                // Label with unit: "Height (cm)"
+                unitLabel = ` <span style="font-weight: normal; color: #323233; margin-left: 5px;">(${unit})</span>`;
+            }
+
+            const tagHtml = isKeyIndicator ? `<span class="key-indicator-tag">关键指标</span>` : '';
+
+            let warningsHtml = '';
+            if (warnings && warnings.length > 0) {
+                warningsHtml = '<div class="preview-warning-box" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ebeef5;">';
+                warnings.forEach((w, index) => {
+                    const formatVal = (val) => {
+                         if (!val) return ''; 
+                         return val + (unit ? unit : '');
+                    };
+
+                    const minDisplay = formatVal(w.min);
+                    const maxDisplay = formatVal(w.max);
+                    
+                    const prefix = warnings.length > 1 ? `${index + 1}. ` : '';
+
+                    let reminderHtml = '';
+                    if (w.push) {
+                        reminderHtml = `<div class="warning-line" style="font-size: 12px; color: #606266; line-height: 1.6;"><span style="font-weight: bold; color: #333;">提醒医生：</span>${w.message || '-'}</div>`;
+                    }
+
+                    warningsHtml += `
+                        <div class="warning-line" style="font-size: 12px; color: #606266; line-height: 1.6;"><span style="font-weight: bold; color: #333;">${prefix}预警设置：</span>${minDisplay} - ${maxDisplay}</div>
+                        ${reminderHtml}
+                    `;
+                });
+                warningsHtml += '</div>';
+            }
+            
+            // Header for Delete and Sort Icons
+            // Absolute positioning to top-right
+            const headerHtml = `
+                <div class="phone-card-actions" style="position: absolute; top: 10px; right: 10px; display: flex; gap: 10px;">
+                    <!-- Delete Icon (Red) -->
+                    <div class="phone-card-action-btn delete-card-btn" style="cursor: pointer; color: #f56c6c;" title="删除">
+                        <svg viewBox="0 0 1024 1024" width="18" height="18" fill="currentColor">
+                            <path d="M704 224h-128V160c0-17.6-14.4-32-32-32h-64c-17.6 0-32 14.4-32 32v64H320c-17.6 0-32 14.4-32 32v32h448v-32c0-17.6-14.4-32-32-32zM352 384v448c0 17.6 14.4 32 32 32h256c17.6 0 32-14.4 32-32V384H352z m128 352c0 8.8-7.2 16-16 16s-16-7.2-16-16V448c0-8.8 7.2-16 16-16s16 7.2 16 16v288z m96 0c0 8.8-7.2 16-16 16s-16-7.2-16-16V448c0-8.8 7.2-16 16-16s16 7.2 16 16v288z" />
+                        </svg>
+                    </div>
+                    <!-- Sort/Move Icon (Gray) -->
+                    <div class="phone-card-action-btn move-card-btn" style="cursor: move; color: #606266;" title="上下平移">
+                        <svg viewBox="0 0 1024 1024" width="18" height="18" fill="currentColor">
+                            <path d="M512 832c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32s32 14.3 32 32v576c0 17.7-14.3 32-32 32z"/>
+                            <path d="M512 224l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l182.6-182.6c12.5-12.5 32.8-12.5 45.3 0l182.6 182.6c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L512 224zM512 832l160-160c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3l-182.6 182.6c-12.5 12.5-32.8 12.5-45.3 0l-182.6-182.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L512 832z"/>
+                            <path d="M288 512h448c17.7 0 32-14.3 32-32s-14.3-32-32-32H288c-17.7 0-32 14.3-32 32s14.3 32 32 32z"/>
+                            <path d="M288 640h448c17.7 0 32-14.3 32-32s-14.3-32-32-32H288c-17.7 0-32 14.3-32 32s14.3 32 32 32z"/>
+                        </svg>
+                    </div>
+                </div>
+            `;
+            
+            // Add position relative to card to support absolute positioning of actions
+            card.style.position = 'relative';
+
+            card.innerHTML = `
+                ${headerHtml}
+                <div class="preview-field-label">
+                    <span class="required">*</span>${name}${tagHtml}${unitLabel}
+                </div>
+                <div class="preview-field-input-wrapper">
+                    <input type="text" class="preview-field-input" placeholder="请输入数字" disabled>
+                    ${unitHtml}
+                </div>
+                ${warningsHtml}
+            `;
+            
+            // Insert before the "Add Field" button container
+            previewContainer.insertBefore(card, addBtnContainer);
+            
+            // Setup Delete
+            card.querySelector('.delete-card-btn').addEventListener('click', () => {
+                // Removed confirmation as per request
+                card.remove();
+                updateKeyIndicatorsList();
+            });
+            
+            // Setup Drag and Drop
+            setupPhoneCardDrag(card);
+
+            updateKeyIndicatorsList();
+        }
+        
+        // Phone Card Drag Logic
+        let draggedPhoneCard = null;
+        function setupPhoneCardDrag(card) {
+            const handle = card.querySelector('.move-card-btn');
+            
+            card.addEventListener('dragstart', (e) => {
+                // Only allow drag if handle is targeted
+                if (handle && !handle.contains(e.target) && handle !== e.target) {
+                    e.preventDefault();
+                    return;
+                }
+                draggedPhoneCard = card;
+                e.dataTransfer.effectAllowed = 'move';
+                card.style.opacity = '0.5';
+            });
+
+            card.addEventListener('dragend', () => {
+                draggedPhoneCard = null;
+                card.style.opacity = '1';
+            });
+
+            card.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (!draggedPhoneCard || draggedPhoneCard === card) return;
+                
+                // Ensure we are dragging phone cards only (basic check)
+                if (!draggedPhoneCard.classList.contains('phone-card')) return;
+
+                const bounding = card.getBoundingClientRect();
+                const offset = bounding.y + (bounding.height / 2);
+                const list = card.parentNode;
+                
+                // Only allow dropping within the preview container before the add button
+                const addBtnContainer = document.querySelector('.add-field-btn-large').parentNode;
+                if (list !== addBtnContainer.parentNode) return; // Should match
+
+                if (e.clientY - offset < 0) {
+                    list.insertBefore(draggedPhoneCard, card);
+                } else {
+                    // Check if next sibling is the add button container
+                    if (card.nextSibling === addBtnContainer) {
+                        list.insertBefore(draggedPhoneCard, addBtnContainer);
+                    } else {
+                        list.insertBefore(draggedPhoneCard, card.nextSibling);
+                    }
+                }
+            });
+        }
+        
+        // Close when clicking outside content
+        indicatorModal.addEventListener('click', (e) => {
+            if (e.target === indicatorModal) {
+                closeModalFn();
+            }
+        });
+
+        // Live Preview Logic
+        const indicatorNameInput = document.getElementById('indicatorNameInput');
+        const indicatorUnitInput = document.getElementById('indicatorUnitInput');
+        const previewInput = document.getElementById('previewInput');
+        const previewSuffix = document.getElementById('previewSuffix');
+        const nameCharCount = indicatorNameInput.nextElementSibling;
+        const unitCharCount = indicatorUnitInput.nextElementSibling;
+
+        function updateCharCount(input, countSpan) {
+            const len = input.value.length;
+            // Check if it's the unit input to use 20 limit, otherwise 200
+            const maxLen = input.id === 'indicatorUnitInput' ? 20 : 200;
+            countSpan.textContent = `${len}/${maxLen}`;
+        }
+
+        indicatorNameInput.addEventListener('input', () => {
+            const val = indicatorNameInput.value.trim();
+            previewInput.placeholder = val || '请输入数字';
+            // Logic to handle "black content" request: 
+            // If val exists, add a class to make placeholder black.
+            if (val) {
+                previewInput.classList.add('black-placeholder');
+                // If it's the exact text from input, we just set placeholder to that text.
+                // User said: "display the content... in black... do not appear 'Please enter'"
+            } else {
+                previewInput.classList.remove('black-placeholder');
+            }
+            updateCharCount(indicatorNameInput, nameCharCount);
+        });
+
+        indicatorUnitInput.addEventListener('input', () => {
+            const val = indicatorUnitInput.value.trim();
+            previewSuffix.textContent = val || '单位';
+            updateCharCount(indicatorUnitInput, unitCharCount);
+            
+            // Sync unit to all range inputs
+            const rangeUnitDisplays = document.querySelectorAll('.range-unit-display');
+            rangeUnitDisplays.forEach(display => {
+                display.textContent = val;
+            });
+
+            // Sync unit to fixed warning texts
+            const warningTextareas = document.querySelectorAll('.warning-message-input');
+            warningTextareas.forEach(textarea => {
+                const oldVal = textarea.value;
+                const prefixRegex = /^\[患者姓名 年龄 性别，日期，时间，数值.*?\]/;
+                const newPrefix = `[患者姓名 年龄 性别，日期，时间，数值${val}]`;
+                
+                if (prefixRegex.test(oldVal)) {
+                    textarea.value = oldVal.replace(prefixRegex, newPrefix);
+                } else {
+                    // If no valid prefix found, just prepend new one
+                    textarea.value = newPrefix + oldVal;
+                }
+            });
+        });
+
+        // Warning Settings Logic
+        const warningList = document.getElementById('warningList');
+        const addWarningBtn = document.getElementById('addWarningBtn');
+
+        // Handle Push Switch Toggles (Event Delegation)
+        warningList.addEventListener('change', (e) => {
+            if (e.target.classList.contains('push-switch')) {
+                const warningItem = e.target.closest('.warning-item');
+                const messageSection = warningItem.querySelector('.warning-message-section');
+                const textarea = messageSection.querySelector('textarea');
+                
+                if (e.target.checked) {
+                    messageSection.classList.remove('is-disabled');
+                    textarea.disabled = false;
+                } else {
+                    messageSection.classList.add('is-disabled');
+                    textarea.disabled = true;
+                }
+            }
+        });
+
+        function getCurrentUnit() {
+            return indicatorUnitInput.value.trim();
+        }
+
+        function updateWarningState() {
+            const items = document.querySelectorAll('.warning-item');
+            const header = document.getElementById('warningSettingsHeader');
+            
+            // Update Header: Always show count
+            header.textContent = `预警设置(${items.length})`;
+
+            // Update Items: Always show index
+            items.forEach((item, index) => {
+                const indexSpan = item.querySelector('.warning-index');
+                if (indexSpan) {
+                    indexSpan.textContent = `${index + 1}. `;
+                }
+            });
+        }
+
+        // Helper to swap elements
+        function swapElements(el1, el2) {
+            const temp = document.createElement('div');
+            el1.parentNode.insertBefore(temp, el1);
+            el2.parentNode.insertBefore(el1, el2);
+            temp.parentNode.insertBefore(el2, temp);
+            temp.parentNode.removeChild(temp);
+        }
+
+        // Drag and Drop Logic
+        let draggedItem = null;
+        function setupDragAndDrop(item) {
+            item.setAttribute('draggable', 'true');
+            const handle = item.querySelector('.move-warning-btn');
+            if (handle) handle.style.cursor = 'move';
+
+            item.addEventListener('dragstart', (e) => {
+                // Only allow drag if handle is targeted
+                if (handle && !handle.contains(e.target) && handle !== e.target) {
+                    e.preventDefault();
+                    return;
+                }
+                draggedItem = item;
+                e.dataTransfer.effectAllowed = 'move';
+                item.style.opacity = '0.5';
+            });
+
+            item.addEventListener('dragend', () => {
+                draggedItem = null;
+                item.style.opacity = '1';
+                updateWarningState();
+            });
+
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (!draggedItem || draggedItem === item) return;
+                
+                const bounding = item.getBoundingClientRect();
+                const offset = bounding.y + (bounding.height / 2);
+                const list = item.parentNode;
+                
+                if (e.clientY - offset < 0) {
+                    list.insertBefore(draggedItem, item);
+                } else {
+                    list.insertBefore(draggedItem, item.nextSibling);
+                }
+            });
+        }
+
+        // Initialize existing items
+        document.querySelectorAll('.warning-item').forEach(setupDragAndDrop);
+        updateWarningState();
+
+        addWarningBtn.addEventListener('click', () => {
+            const newItem = document.createElement('div');
+            newItem.className = 'warning-item';
+            newItem.style.cssText = 'background: #f9fafc; padding: 15px; border-radius: 4px; margin-bottom: 10px; border: 1px solid #ebeef5; position: relative; transition: all 0.3s ease;';
+            const itemIndex = warningList.children.length;
+            const currentUnit = getCurrentUnit();
+            
+            newItem.innerHTML = `
+                <div style="position: absolute; top: 10px; right: 10px; display: flex; align-items: center; gap: 8px;">
+                    <!-- Move Up/Down Icon (Sort) -->
+                    <div class="move-warning-btn" title="长按拖拽排序" style="cursor: pointer; color: #909399; display: flex; align-items: center;">
+                        <svg viewBox="0 0 1024 1024" width="18" height="18" fill="currentColor">
+                            <path d="M512 832c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32s32 14.3 32 32v576c0 17.7-14.3 32-32 32z"/>
+                            <path d="M512 224l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l182.6-182.6c12.5-12.5 32.8-12.5 45.3 0l182.6 182.6c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L512 224zM512 832l160-160c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3l-182.6 182.6c-12.5 12.5-32.8 12.5-45.3 0l-182.6-182.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L512 832z"/>
+                        </svg>
+                    </div>
+                    
+                    <div class="delete-warning-btn" style="cursor: pointer; color: #909399; display: flex; align-items: center;">
+                        <svg viewBox="0 0 1024 1024" width="18" height="18" fill="currentColor">
+                            <path d="M704 224h-128V160c0-17.6-14.4-32-32-32h-64c-17.6 0-32 14.4-32 32v64H320c-17.6 0-32 14.4-32 32v32h448v-32c0-17.6-14.4-32-32-32zM352 384v448c0 17.6 14.4 32 32 32h256c17.6 0 32-14.4 32-32V384H352z m128 352c0 8.8-7.2 16-16 16s-16-7.2-16-16V448c0-8.8 7.2-16 16-16s16 7.2 16 16v288z m96 0c0 8.8-7.2 16-16 16s-16-7.2-16-16V448c0-8.8 7.2-16 16-16s16 7.2 16 16v288z" />
+                        </svg>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: flex-start; margin-bottom: 15px;">
+                    <span class="modal-label warning-label-container" style="min-width: 90px; width: auto; margin-bottom: 0; padding-top: 6px; margin-right: 10px;"><span class="warning-index"></span>预警设置范围</span>
+                    <div class="range-input-container">
+                        <div style="display: flex; align-items: center;">
+                            <input type="text" class="modal-input range-input" style="width: 120px; height: 32px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px;" placeholder="数值">
+                            <span class="range-unit-display" style="margin-left: 8px; font-size: 14px; color: #606266;">${currentUnit}</span>
+                        </div>
+                        <label class="unlimited-checkbox-wrapper">
+                            <input type="checkbox" class="unlimited-checkbox-input">
+                            <div class="unlimited-checkbox-visual"></div>
+                            <span class="unlimited-text">不限</span>
+                        </label>
+                    </div>
+                    <span style="margin: 0 10px; color: #909399; padding-top: 6px;">-</span>
+                    <div class="range-input-container">
+                        <div style="display: flex; align-items: center;">
+                            <input type="text" class="modal-input range-input" style="width: 120px; height: 32px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px;" placeholder="数值">
+                            <span class="range-unit-display" style="margin-left: 8px; font-size: 14px; color: #606266;">${currentUnit}</span>
+                        </div>
+                        <label class="unlimited-checkbox-wrapper">
+                            <input type="checkbox" class="unlimited-checkbox-input">
+                            <div class="unlimited-checkbox-visual"></div>
+                            <span class="unlimited-text">不限</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; margin-bottom: 15px; margin-top: 15px;">
+                    <span class="modal-label" style="margin-bottom: 0; margin-right: 15px;">预警是否推送提醒医生</span>
+                    <label class="switch">
+                        <input type="checkbox" class="push-switch" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div class="warning-message-section" style="display: flex; flex-direction: column; transition: opacity 0.3s;">
+                     <span class="modal-label" style="margin-bottom: 8px;">提醒医生的文案内容<br><span style="font-weight: normal; font-size: 13px; color: #606266;">(当患者输入的数值是在配置的范围内，医生将收到如下的提醒)</span></span>
+                     <textarea class="modal-input warning-message-input" style="width: 100%; height: 60px; padding: 8px; resize: none; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; outline: none; color: #606266;">[患者姓名 年龄 性别，日期，时间，数值${currentUnit}]</textarea>
+                </div>
+            `;
+
+            setupDragAndDrop(newItem);
+            warningList.appendChild(newItem);
+            updateWarningState();
+        });
+
+        // Handle "Unlimited" checkbox logic
+        warningList.addEventListener('change', (e) => {
+            if (e.target.classList.contains('unlimited-checkbox-input')) {
+                const checkbox = e.target;
+                const container = checkbox.closest('.range-input-container');
+                const input = container.querySelector('.range-input');
+
+                if (checkbox.checked) {
+                    input.value = '不限';
+                    input.disabled = true;
+                    input.classList.add('is-unlimited');
+                } else {
+                    input.value = '';
+                    input.disabled = false;
+                    input.classList.remove('is-unlimited');
+                    input.focus();
+                }
+            }
+        });
+
+        // Handle Input typing for range inputs
+        warningList.addEventListener('input', (e) => {
+            if (e.target.classList.contains('range-input')) {
+                const input = e.target;
+                let val = input.value;
+                
+                // Allow digits and dot only
+                val = val.replace(/[^\d.]/g, '');
+
+                // Ensure only one dot
+                const dotIndex = val.indexOf('.');
+                if (dotIndex !== -1) {
+                    // If there's a dot, remove any subsequent dots
+                    const beforeDot = val.substring(0, dotIndex + 1);
+                    const afterDot = val.substring(dotIndex + 1).replace(/\./g, '');
+                    val = beforeDot + afterDot;
+                }
+
+                input.value = val;
+            }
+        });
+
+        // Event delegation for delete warning item
+        warningList.addEventListener('click', (e) => {
+            const btn = e.target.closest('.delete-warning-btn');
+            if (btn) {
+                const item = btn.closest('.warning-item');
+                if (item) {
+                    item.remove();
+                    updateWarningState();
+                }
+            }
+        });
+
+        // Enforce prefix on warning message input
+        warningList.addEventListener('input', (e) => {
+            if (e.target.classList.contains('warning-message-input')) {
+                const textarea = e.target;
+                const unit = getCurrentUnit();
+                const prefix = `[患者姓名 年龄 性别，日期，时间，数值${unit}]`;
+                
+                // If the value doesn't start with prefix, we need to fix it
+                if (!textarea.value.startsWith(prefix)) {
+                    // Try to find if the user just deleted part of it or inserted before it
+                    // Simple robust strategy: find the first ']' and assume everything before and including it is (or should be) the prefix
+                    const closingBracketIndex = textarea.value.indexOf(']');
+                    let userContent = '';
+                    
+                    if (closingBracketIndex !== -1) {
+                        // User content is everything after the first ]
+                        userContent = textarea.value.substring(closingBracketIndex + 1);
+                    } else {
+                        // User deleted the bracket? Assume everything is user content? 
+                        // Or maybe they selected all and deleted.
+                        // Let's assume the whole thing is user content if no bracket found, 
+                        // but usually we want to preserve what they typed.
+                        userContent = textarea.value;
+                    }
+                    
+                    // Restore
+                    // Save cursor position? It's tricky because we are changing the value.
+                    // For now, simple restore is better than broken UI.
+                    const scrollTop = textarea.scrollTop;
+                    textarea.value = prefix + userContent;
+                    textarea.scrollTop = scrollTop;
+                }
+            }
+        });
+
+        // Prevent deleting the prefix via keydown
+        warningList.addEventListener('keydown', (e) => {
+            if (e.target.classList.contains('warning-message-input')) {
+                const textarea = e.target;
+                const unit = getCurrentUnit();
+                const prefix = `[患者姓名 年龄 性别，日期，时间，数值${unit}]`;
+                const prefixLen = prefix.length;
+                
+                // If cursor is within the prefix area
+                if (textarea.selectionStart < prefixLen) {
+                    // Prevent typing or pasting into prefix
+                    // Allow arrow keys, copy, etc.
+                    // Block printable characters and paste
+                    if (e.key.length === 1 || e.key === 'Paste') {
+                        e.preventDefault();
+                        // Optionally move cursor to end of prefix
+                        textarea.setSelectionRange(prefixLen, prefixLen);
+                    }
+                    
+                    // Block Backspace/Delete if it would affect prefix
+                    if (e.key === 'Backspace' || e.key === 'Delete') {
+                         e.preventDefault();
+                    }
+                }
+                
+                // Special case: Backspace when cursor is EXACTLY at end of prefix
+                if (textarea.selectionStart === prefixLen && e.key === 'Backspace') {
+                    // Prevent deleting the last char of prefix (the ']')
+                    e.preventDefault();
+                }
+                
+                // Special case: Select All (or range) that includes prefix -> allow but ensure prefix is restored on input?
+                // The input event handler handles the restore.
+            }
+        });
+        // Annotation Scroll Sync Logic
+        const modalBody = document.querySelector('.modal-body');
+        const annotationPanel = document.getElementById('pushAnnotationPanel');
+        
+        function updateAnnotationPosition() {
+            if (!annotationPanel) return;
+            
+            // Find the active warning item's message input (first one)
+            const warningItem = document.querySelector('#warningList .warning-item');
+            if (!warningItem) return;
+            
+            const messageInput = warningItem.querySelector('.warning-message-input');
+            if (!messageInput) return;
+            
+            const modalContent = document.querySelector('.modal-content');
+            if (!modalContent) return;
+
+            const inputRect = messageInput.getBoundingClientRect();
+            const modalRect = modalContent.getBoundingClientRect();
+            
+            // Calculate relative position
+            // Arrow is at top: 50px (defined in CSS)
+            // We want arrow to align with input top + 15px (roughly center of first line)
+            const targetTop = inputRect.top - modalRect.top + 15;
+            const arrowOffset = 50; 
+            
+            const newMarginTop = targetTop - arrowOffset;
+            
+            annotationPanel.style.marginTop = `${newMarginTop}px`;
+        }
+
+        if (modalBody) {
+            modalBody.addEventListener('scroll', updateAnnotationPosition);
+        }
+        
+        window.addEventListener('resize', updateAnnotationPosition);
+        
+        // Initial call when modal opens
+        createIndicatorBtn.addEventListener('click', () => {
+             // Allow layout to settle
+             setTimeout(updateAnnotationPosition, 50);
+             setTimeout(updateAnnotationPosition, 200);
+        });
+
+        // Indicator Card Drag and Drop Logic
+        let draggedIndicator = null;
+        function setupIndicatorDrag(card) {
+            const moveHandle = card.querySelector('.move-icon');
+            if (!moveHandle) return;
+
+            card.setAttribute('draggable', 'true');
+            
+            card.addEventListener('dragstart', (e) => {
+                // Only allow drag if handle is targeted
+                if (!moveHandle.contains(e.target) && moveHandle !== e.target) {
+                    e.preventDefault();
+                    return;
+                }
+                draggedIndicator = card;
+                e.dataTransfer.effectAllowed = 'move';
+                card.style.opacity = '0.5';
+            });
+
+            card.addEventListener('dragend', () => {
+                draggedIndicator = null;
+                card.style.opacity = '1';
+            });
+
+            card.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (!draggedIndicator || draggedIndicator === card) return;
+                
+                // Ensure we are dragging over another indicator card
+                const targetCard = e.target.closest('.indicator-card');
+                if (!targetCard || targetCard === card) return;
+                
+                const bounding = targetCard.getBoundingClientRect();
+                const offset = bounding.y + (bounding.height / 2);
+                
+                if (e.clientY - offset < 0) {
+                    targetCard.parentNode.insertBefore(draggedIndicator, targetCard);
+                } else {
+                    targetCard.parentNode.insertBefore(draggedIndicator, targetCard.nextSibling);
+                }
+            });
+        }
+
+        // Initialize existing indicator cards (that are editable)
+        document.querySelectorAll('.indicator-card[data-owner="true"]').forEach(setupIndicatorDrag);
+    </script>
+
+</body>
+</html>

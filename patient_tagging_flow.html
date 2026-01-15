@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>患者管理 - 医生端交互演示</title>
+    <style>
+        :root {
+            --primary-color: #55B796; /* Medical Green */
+            --primary-light: #E8F5F1;
+            --text-main: #333333;
+            --text-secondary: #666666;
+            --text-light: #999999;
+            --bg-page: #F5F6F7;
+            --bg-white: #FFFFFF;
+            --border-color: #EEEEEE;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --safe-area-bottom: env(safe-area-inset-bottom);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+            background-color: #e0e0e0; /* Desktop background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        /* Mobile Container Simulation */
+        #app-container {
+            width: 100%;
+            max-width: 375px;
+            height: 812px; /* iPhone X height */
+            background-color: var(--bg-page);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Screen Transitions */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-page);
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .screen.hidden {
+            transform: translateX(100%);
+            z-index: 5;
+        }
+
+        .screen.active {
+            transform: translateX(0);
+            z-index: 20;
+        }
+
+        /* --- Components --- */
+
+        /* Navbar */
+        .navbar {
+            height: 44px;
+            background: var(--bg-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        /* Tabs (Top) */
+        .top-tabs {
+            display: flex;
+            background: var(--bg-white);
+            height: 44px;
+            align-items: center;
+        }
+        .top-tab-item {
+            flex: 1;
+            text-align: center;
+            font-size: 15px;
+            color: var(--text-secondary);
+            position: relative;
+            height: 100%;
+            line-height: 44px;
+            cursor: pointer;
+        }
+        .top-tab-item.active {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        .top-tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background-color: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        /* --- Screen 1: Audit List --- */
+        .audit-list {
+            padding: 12px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .patient-card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            background-color: #eee;
+            border-radius: 50%;
+，mahgin-right: 12px;
+            background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=Annie');
+            background-size: cover;
+        }
+
+        .patient-info h3 {
+            font-size: 16px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+        }
+
+        .tag-status {
+            font-size: 10px;
+            padding: 2px 6px;
+            background: #FFEEE6;
+            color: #FF7D41;
+            border-radius: 4px;
+            margin-left: auto;
+        }
+
+        .info-sub {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .detail-row {
+            margin-bottom: 12px;
+        }
+        .detail-label {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+        .detail-content {
+            font-size: 14px;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            flex: 1;
+            height: 40px;
+            border-radius: 20px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn:active { opacity: 0.8; }
+        
+        .btn-reject {
+            background: var(--bg-white);
+            border: 1px solid #ddd;
+            color: var(--text-secondary);
+        }
+        
+        .btn-pass {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 8px rgba(85, 183, 150, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .btn-large {
+            height: 40px; /* Reduced height */
+            font-size: 14px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-secondary {
+            background: #F0F2F5;
+            color: var(--text-secondary);
+            border: 1px solid #E0E0E0;
+        }
+
+        /* --- Screen 2: Tagging Interface --- */
+        .tagging-header {
+            background: var(--bg-white);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .patient-summary {
+            font-size: 14px;
+            color: var(--text-main);
+        }
+        .patient-summary span { margin-right: 8px; font-weight: 600; }
+        .patient-summary em { font-style: normal; color: var(--text-secondary); font-size: 12px; }
+
+        .search-area {
+            background: var(--bg-white);
+            padding: 8px 12px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .search-box {
+            flex: 1;
+            background: #F5F5F5;
+            height: 32px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+        }
+        .search-box input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-size: 13px;
+            outline: none;
+            margin-left: 6px;
+        }
+        .btn-mini {
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 14px;
+            border: 1px solid #ddd;
+            background: white;
+        }
+
+        .tagging-body {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            background: var(--bg-white);
+        }
+
+        /* Sidebar (Categories) */
+        .category-sidebar {
+            width: 90px;
+            background: #F7F8FA;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+        }
+        .category-item {
+            padding: 16px 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: center;
+            position: relative;
+            transition: background 0.2s;
+        }
+        .category-item .dot {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 6px;
+            height: 6px;
+            background-color: #FF4D4F;
+            border-radius: 50%;
+            display: none;
+        }
+        .category-item.has-match .dot {
+            display: block;
+        }
+        .category-item.active {
+            background: var(--bg-white);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        .category-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 16px;
+            width: 3px;
+            background: var(--primary-color);
+            border-radius: 0 2px 2px 0;
+        }
+        
+        /* Spacing for search results */
+        .tags-group-section + .tags-group-section {
+            margin-top: 24px;
+        }
+        .tags-group-title.extra-gap {
+            margin-top: 24px;
+        }
+
+        /* Main Tag Area */
+        .tags-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        .tags-group-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-main);
+        }
+        
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag-chip {
+            padding: 6px 14px;
+            background: var(--bg-white);
+            border: 1px solid #E0E0E0;
+            border-radius: 16px;
+            font-size: 13px;
+            color: var(--text-main);
+            transition: all 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+            position: relative;
+        }
+        .tag-chip.selected {
+            background: var(--primary-light);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        /* Fav Style */
+        .tag-chip.is-fav {
+            padding: 0;
+            display: inline-flex;
+            align-items: stretch;
+            overflow: hidden;
+            vertical-align: top; /* Alignment fix */
+        }
+        .tag-chip.is-fav .tag-text {
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+        }
+        .tag-chip.is-fav .tag-fav-btn {
+            border-left: 1px solid #E0E0E0;
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7B61FF; /* Purple star */
+            background: #FAFAFA;
+        }
+        .tag-add-btn {
+            padding: 6px 14px;
+            background: #F0F2F5;
+            border: 1px dashed #CCC;
+            border-radius: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        /* Selected Tags Bar (Floating Bottom) */
+        .selected-bar {
+            background: var(--bg-white);
+            border-top: 1px solid var(--border-color);
+            padding: 0 16px 12px 16px; /* Modified padding */
+            padding-bottom: calc(12px + var(--safe-area-bottom));
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 30;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-btn {
+            width: calc(100% + 32px);
+            margin-left: -16px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #999;
+            background-color: #fafafa;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 10px;
+        }
+        
+        .selected-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .selected-tags-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+            /* padding-bottom: 4px; Remove this as we don't scroll x anymore */
+            min-height: 32px; /* Ensure click area */
+            cursor: pointer;
+        }
+        .tag-preview {
+            background: var(--primary-color);
+            color: white;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+        }
+        .tag-preview .remove-x {
+            margin-left: 6px;
+            font-weight: bold;
+        }
+
+        /* Toast */
+        .toast {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            font-size: 15px;
+            line-height: 1.6;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* Scrollbar hide */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <!-- Screen 1: Audit -->
+    <div id="screen-audit" class="screen active">
+        <div class="top-tabs">
+            <div class="top-tab-item active">待审核(1)</div>
+            <div class="top-tab-item">已审核(54)</div>
+        </div>
+        
+        <div class="audit-list">
+            <div class="patient-card">
+                <div class="card-header">
+                    <div class="avatar"></div>
+                    <div class="patient-info">
+                        <h3>韩梅梅 <span style="font-size: 14px; color:#666; font-weight:normal; margin-left:8px;">女 20岁</span></h3>
+                        <div class="info-sub">18909890989</div>
+                    </div>
+                    <div class="tag-status">待审核</div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">申请时间</div>
+                    <div class="detail-content">2026-01-04 17:38</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">症状描述(患者输入内容)</div>
+                    <div class="detail-content">最近感觉胸闷气短，尤其是在运动后，想咨询一下是否需要进一步检查。</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">诊断(通过HIS获取)</div>
+                    <div class="detail-content" style="color:#999;">HIS接口无数据</div>
+                </div>
+
+                <div class="card-actions">
+                    <button class="btn btn-reject">拒绝</button>
+                    <button class="btn btn-pass" onclick="approvePatient()">通过</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen 2: Tagging -->
+    <div id="screen-tagging" class="screen hidden">
+        <div class="tagging-header">
+            <div class="patient-summary">
+                <span>韩梅梅</span><em>女 20岁</em>
+            </div>
+            <div style="font-size:13px; color:#666;">入组医生: 阳毅</div>
+        </div>
+
+        <div class="top-tabs" style="border-bottom: 1px solid #eee;">
+            <div class="top-tab-item active" onclick="switchMainTab(this, 'general')">通用</div>
+            <div class="top-tab-item" onclick="switchMainTab(this, 'mine')">我的</div>
+        </div>
+
+        <div class="search-area">
+            <div class="search-box">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" id="search-input" placeholder="搜索关键字..." oninput="handleSearchInput(this.value)">
+            </div>
+            <button class="btn-mini" onclick="performSearch()">搜索</button>
+            <button class="btn-mini" onclick="clearSearch()">重置</button>
+        </div>
+
+        <div class="tagging-body">
+            <!-- Sidebar -->
+            <div class="category-sidebar">
+                <div class="category-item active" id="nav-cat1" data-cat="cat1" onclick="switchCategory(this, 'cat1')">病种<div class="dot"></div></div>
+                <div class="category-item" id="nav-cat2" data-cat="cat2" onclick="switchCategory(this, 'cat2')">风险等级<div class="dot"></div></div>
+                <div class="category-item" id="nav-cat3" data-cat="cat3" onclick="switchCategory(this, 'cat3')">随访频率<div class="dot"></div></div>
+                <div class="category-item" id="nav-cat4" data-cat="cat4" onclick="switchCategory(this, 'cat4')">依从性<div class="dot"></div></div>
+                <div class="category-item" id="nav-cat5" data-cat="cat5" onclick="switchCategory(this, 'cat5')">医保类型<div class="dot"></div></div>
+            </div>
+
+            <!-- Content -->
+            <div class="tags-content" id="tags-container">
+                <!-- Content will be injected by JS -->
+            </div>
+        </div>
+
+        <!-- Bottom Action Bar -->
+        <div class="selected-bar">
+            <div class="toggle-btn" onclick="toggleExpand()">
+                <svg id="toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            </div>
+            <div class="selected-info">
+                <span>已选标签 (<span id="selected-count">0</span>)</span>
+                <span style="font-size:12px; color:#999;">长按标签可收藏</span>
+            </div>
+            <div class="selected-tags-preview" id="selected-preview">
+                <!-- Selected tags go here -->
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-large btn-secondary" onclick="skipTagging()">暂无标签</button>
+                <button class="btn btn-large btn-pass" onclick="finishTagging()">保存已选标签</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast">操作成功</div>
+
+<script>
+    // Data Mock
+    const tagData = {
+        'cat1': { title: '病种分类', tags: ['高血压', '2型糖尿病', '冠心病', '慢性支气管炎', '高脂血症', '脑卒中后遗症', '骨质疏松'] },
+        'cat2': { title: '风险等级', tags: ['高危', '中危', '低危', '极高危', '未评估'] },
+        'cat3': { title: '随访频率', tags: ['每周一次', '每两周一次', '每月一次', '每季度一次', '不定期'] },
+        'cat4': { title: '依从性', tags: ['配合度高', '配合度一般', '抗拒治疗', '需家属协助'] },
+        'cat5': { title: '医保类型', tags: ['职工医保', '居民医保', '新农合', '自费', '商业保险'] }
+    };
+
+    const myFavTagsData = {
+        title: '我创建的标签/我的收藏',
+        tags: ['疑难杂症', '待出院', '随访中', '家属沟通', '特殊护理']
+    };
+
+    let selectedTags = new Set();
+    let currentCategory = 'cat1';
+    let currentMainTab = 'general';
+    let isSearchMode = false;
+    let searchScrollListener = null;
+    let isTagsExpanded = true;
+
+    // Initialize
+    renderTags('cat1');
+
+    function approvePatient() {
+        showToast("请完善患者的标签");
+        setTimeout(() => {
+            document.getElementById('screen-audit').classList.add('hidden');
+            document.getElementById('screen-audit').classList.remove('active');
+            
+            document.getElementById('screen-tagging').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('screen-tagging').classList.add('active');
+            }, 50);
+        }, 800);
+    }
+
+    function switchMainTab(el, tab) {
+        document.querySelectorAll('.top-tabs .top-tab-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+        currentMainTab = tab;
+        
+        // Clear search when switching tabs to avoid confusion
+        clearSearch(false); // false = don't re-render yet, we will do it below
+
+        const sidebar = document.querySelector('.category-sidebar');
+        if (tab === 'mine') {
+            sidebar.style.display = 'none';
+            renderMyTags();
+        } else {
+            sidebar.style.display = 'block';
+            renderTags(currentCategory);
+        }
+    }
+
+    function switchCategory(el, catId) {
+        if (isSearchMode && currentMainTab === 'general') {
+            // In search mode, scroll to the section
+            const section = document.getElementById('section-' + catId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth' });
+                // Manually update active state immediately for better responsiveness
+                document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+                el.classList.add('active');
+            }
+            return;
+        }
+
+        document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+        currentCategory = catId;
+        
+        // If we are in search mode (but maybe in 'Mine' tab or search is empty?), logic falls here if isSearchMode is false.
+        // Standard behavior: clear search input when explicitly clicking a category in normal mode
+        const searchInput = document.getElementById('search-input');
+        if (searchInput.value.trim() !== '') {
+            searchInput.value = '';
+            exitSearchMode(); // Ensure we exit search mode
+        }
+        
+        renderTags(catId);
+    }
+
+    function renderTags(catId) {
+        const container = document.getElementById('tags-container');
+        const data = tagData[catId];
+        
+        let html = `<div class="tags-group-title">${data.title}</div><div class="tags-container">`;
+        data.tags.forEach(tag => {
+            html += buildTagHtml(tag);
+        });
+        html += `</div>`;
+        container.innerHTML = html;
+        attachLongPressHandlers();
+    }
+
+    function renderMyTags() {
+        const container = document.getElementById('tags-container');
+        
+        // Render My Favorite Tags
+        let html = `<div class="tags-group-title">${myFavTagsData.title}</div><div class="tags-container">`;
+        myFavTagsData.tags.forEach(tag => {
+            html += buildTagHtml(tag);
+        });
+        
+        // Add Button
+        html += `<div class="tag-add-btn" onclick="addNewTag()">+ 新增标签</div>`;
+        
+        html += `</div>`;
+        
+        container.innerHTML = html;
+        attachLongPressHandlers();
+    }
+
+    function addNewTag() {
+        const newTag = prompt("请输入新标签名称：");
+        if (newTag && newTag.trim()) {
+            const tag = newTag.trim();
+            if (myFavTagsData.tags.includes(tag)) {
+                showToast("该标签已存在");
+                return;
+            }
+            // Add to favs (created tags are treated as favs/my tags)
+            myFavTagsData.tags.push(tag);
+            
+            // Auto select it? Maybe.
+            // selectedTags.add(tag); 
+            // isTagsExpanded = true;
+            
+            showToast("添加成功");
+            rerenderCurrentView();
+            // updateSelectedPreview();
+        }
+    }
+
+    function buildTagHtml(tag) {
+        const isSelected = selectedTags.has(tag);
+        const isFav = myFavTagsData.tags.includes(tag);
+        
+        if (isFav) {
+            return `<div class="tag-chip is-fav ${isSelected ? 'selected' : ''}" data-tag="${tag}" onclick="toggleTag(this, '${tag}')">
+                <span class="tag-text">${tag}</span>
+                <div class="tag-fav-btn">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                </div>
+            </div>`;
+        } else {
+            return `<div class="tag-chip ${isSelected ? 'selected' : ''}" data-tag="${tag}" onclick="toggleTag(this, '${tag}')">${tag}</div>`;
+        }
+    }
+
+    function attachLongPressHandlers() {
+        const chips = document.querySelectorAll('.tag-chip');
+        chips.forEach(chip => {
+            let timer;
+            const tag = chip.getAttribute('data-tag');
+            
+            const start = (e) => {
+                // e.preventDefault(); // Don't prevent default immediately or click won't work? 
+                // Actually for touch, we might want to prevent context menu
+                timer = setTimeout(() => {
+                    handleLongPress(tag);
+                }, 600);
+            };
+            
+            const end = (e) => {
+                clearTimeout(timer);
+            };
+            
+            const move = (e) => {
+                clearTimeout(timer);
+            };
+
+            chip.addEventListener('touchstart', start, {passive: true});
+            chip.addEventListener('touchend', end);
+            chip.addEventListener('touchmove', move);
+            
+            chip.addEventListener('mousedown', start);
+            chip.addEventListener('mouseup', end);
+            chip.addEventListener('mouseleave', end);
+            
+            chip.oncontextmenu = (e) => {
+                e.preventDefault();
+                return false;
+            };
+        });
+    }
+
+    function handleLongPress(tag) {
+        // Toggle Fav status
+        const index = myFavTagsData.tags.indexOf(tag);
+        if (index > -1) {
+            // Already fav, remove it? 
+            // Or just alert? Usually long press on faved item might ask to remove.
+            if (confirm(`取消收藏标签 "${tag}" ?`)) {
+                myFavTagsData.tags.splice(index, 1);
+                showToast("已取消收藏");
+                rerenderCurrentView();
+            }
+        } else {
+            // Add to fav
+            myFavTagsData.tags.push(tag);
+            // Also show visual feedback
+            showToast("收藏成功！");
+            
+            // Need to re-render to show the star style
+            rerenderCurrentView();
+        }
+    }
+
+    function rerenderCurrentView() {
+        if (isSearchMode) {
+             const searchInput = document.getElementById('search-input');
+             if (searchInput) handleSearchInput(searchInput.value);
+        } else {
+            if (currentMainTab === 'general') {
+                renderTags(currentCategory);
+            } else {
+                renderMyTags();
+            }
+        }
+    }
+
+    function toggleTag(el, tag) {
+        if (selectedTags.has(tag)) {
+            selectedTags.delete(tag);
+            el.classList.remove('selected');
+        } else {
+            selectedTags.add(tag);
+            el.classList.add('selected');
+            // Auto expand when adding (optional, but requested "display finished one line, display second line")
+            if (!isTagsExpanded) {
+                 isTagsExpanded = true;
+            }
+        }
+        updateSelectedPreview();
+    }
+
+    function toggleExpand() {
+        isTagsExpanded = !isTagsExpanded;
+        updateSelectedPreview();
+    }
+
+    function updateSelectedPreview() {
+        const preview = document.getElementById('selected-preview');
+        const countEl = document.getElementById('selected-count');
+        const toggleIcon = document.getElementById('toggle-icon');
+        
+        countEl.textContent = selectedTags.size;
+        preview.innerHTML = '';
+        
+        // Update Icon
+        if (isTagsExpanded) {
+            // Chevron Down (to collapse)
+            toggleIcon.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
+        } else {
+            // Chevron Up (to expand)
+            toggleIcon.innerHTML = '<polyline points="18 15 12 9 6 15"></polyline>';
+        }
+        
+        // Remove onclick on preview container as we have a button now
+        preview.onclick = null;
+        preview.style.cursor = 'default';
+
+        const tagsArray = Array.from(selectedTags);
+        if (tagsArray.length === 0) return;
+
+        // Helper to create tag element
+        const createTagEl = (tag) => {
+            const tagEl = document.createElement('div');
+            tagEl.className = 'tag-preview';
+            tagEl.innerHTML = `${tag} <span class="remove-x" onclick="event.stopPropagation(); removeTag('${tag}')">&times;</span>`;
+            return tagEl;
+        };
+
+        // Render all tags initially to measure or just show if expanded
+        tagsArray.forEach(tag => {
+            preview.appendChild(createTagEl(tag));
+        });
+
+        if (!isTagsExpanded) {
+            // Collapse logic: Check for overflow
+            if (preview.children.length > 0) {
+                const firstTop = preview.children[0].offsetTop;
+                let cutIndex = -1;
+                
+                for (let i = 0; i < preview.children.length; i++) {
+                    if (preview.children[i].offsetTop > firstTop) {
+                        cutIndex = i;
+                        break;
+                    }
+                }
+                
+                if (cutIndex !== -1) {
+                    // Has overflow
+                    // Remove all from cutIndex
+                    while (preview.children.length > cutIndex) {
+                        preview.removeChild(preview.lastChild);
+                    }
+                    
+                    // Now replace the LAST visible one with "..."
+                    if (preview.lastChild) {
+                        const ellipsis = document.createElement('div');
+                        ellipsis.className = 'tag-preview';
+                        ellipsis.style.background = '#F5F5F5';
+                        ellipsis.style.color = '#999';
+                        ellipsis.style.borderColor = '#ddd';
+                        ellipsis.innerHTML = '...';
+                        preview.replaceChild(ellipsis, preview.lastChild);
+                    }
+                }
+            }
+        }
+    }
+
+    function removeTag(tag) {
+        selectedTags.delete(tag);
+        updateSelectedPreview();
+        // Re-render current view to update active state
+        // Check if we are in search mode
+        const searchInput = document.getElementById('search-input');
+        if (searchInput && searchInput.value.trim() !== '') {
+             handleSearchInput(searchInput.value);
+        } else {
+             if (currentMainTab === 'general') {
+                renderTags(currentCategory);
+             } else {
+                renderMyTags();
+             }
+        }
+    }
+    function handleSearchInput(val) {
+        const keyword = val.trim().toLowerCase();
+        
+        if (!keyword) {
+            exitSearchMode();
+            return;
+        }
+
+        const container = document.getElementById('tags-container');
+        const sidebar = document.querySelector('.category-sidebar');
+        
+        let html = '';
+        let foundAny = false;
+
+        if (currentMainTab === 'general') {
+            isSearchMode = true;
+            sidebar.style.display = 'block'; // Keep sidebar visible
+
+            // Reset dots
+            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('has-match'));
+
+            // Search all categories and build one long list
+            for (const [key, catData] of Object.entries(tagData)) {
+                const matches = catData.tags.filter(t => t.toLowerCase().includes(keyword));
+                
+                if (matches.length > 0) {
+                    foundAny = true;
+                    // Mark sidebar dot
+                    const navItem = document.getElementById('nav-' + key);
+                    if (navItem) navItem.classList.add('has-match');
+
+                    // Add Section
+                    html += `<div id="section-${key}" class="tags-group-section" data-cat="${key}">
+                        <div class="tags-group-title">来自: ${catData.title}</div>
+                        <div class="tags-container">`;
+                    matches.forEach(tag => {
+                        html += buildTagHtml(tag);
+                    });
+                    html += `</div></div>`;
+                }
+            }
+
+            if (!foundAny) {
+                html = `<div style="text-align:center; padding: 40px; color:#999; font-size:14px;">
+                    未找到包含 "${val}" 的标签
+                </div>`;
+            }
+            
+            container.innerHTML = html;
+            attachLongPressHandlers();
+            
+            // Setup Scroll Listener for Sidebar linking
+            if (!searchScrollListener) {
+                searchScrollListener = () => {
+                    const sections = document.querySelectorAll('.tags-group-section');
+                    let current = '';
+                    
+                    sections.forEach(section => {
+                        const sectionTop = section.offsetTop;
+                        const sectionHeight = section.clientHeight;
+                        // -20 offset for better trigger point
+                        if (container.scrollTop >= (sectionTop - container.offsetTop - 20)) {
+                            current = section.getAttribute('data-cat');
+                        }
+                    });
+
+                    if (current) {
+                        document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+                        const activeNav = document.getElementById('nav-' + current);
+                        if (activeNav) activeNav.classList.add('active');
+                    }
+                };
+                container.addEventListener('scroll', searchScrollListener);
+            }
+            
+            // Trigger once to set initial active
+            searchScrollListener();
+
+        } else {
+            // Mine Tab logic (Keep existing logic or similar?)
+            // For now, keeping existing "Mine" logic but without sidebar interaction
+            // Hide sidebar for Mine tab
+            sidebar.style.display = 'none';
+            
+            // ... (Mine tab search logic remains same) ...
+            
+            // Search My Favs
+            const favMatches = myFavTagsData.tags.filter(t => t.toLowerCase().includes(keyword));
+            if (favMatches.length > 0) {
+                foundAny = true;
+                html += `<div class="tags-group-title">来自: ${myFavTagsData.title}</div><div class="tags-container">`;
+                favMatches.forEach(tag => {
+                    html += buildTagHtml(tag);
+                });
+                html += `</div>`;
+            }
+
+            if (!foundAny) {
+                html = `<div style="text-align:center; padding: 40px; color:#999; font-size:14px;">
+                    未找到包含 "${val}" 的标签
+                </div>`;
+            }
+            container.innerHTML = html;
+            attachLongPressHandlers();
+        }
+    }
+
+    function performSearch() {
+        const val = document.getElementById('search-input').value;
+        handleSearchInput(val);
+    }
+
+    function clearSearch(render = true) {
+        document.getElementById('search-input').value = '';
+        if (render) {
+            exitSearchMode();
+        }
+    }
+
+    function exitSearchMode() {
+        isSearchMode = false;
+        
+        // Remove scroll listener
+        if (searchScrollListener) {
+            const container = document.getElementById('tags-container');
+            container.removeEventListener('scroll', searchScrollListener);
+            searchScrollListener = null;
+        }
+
+        // Reset dots
+        document.querySelectorAll('.category-item').forEach(el => el.classList.remove('has-match'));
+
+        // Restore view based on current tab
+        const sidebar = document.querySelector('.category-sidebar');
+        
+        if (currentMainTab === 'general') {
+            sidebar.style.display = 'block';
+            
+            // Find which category was last active or default to cat1
+            // But logic says: "restore view". Usually we restore to what was selected before.
+            // But during search, user might have clicked sidebar to scroll.
+            // Let's just render currentCategory.
+            renderTags(currentCategory);
+            
+            // Restore active state
+            document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+            const activeNav = document.getElementById('nav-' + currentCategory);
+            if (activeNav) activeNav.classList.add('active');
+
+        } else {
+            sidebar.style.display = 'none';
+            renderMyTags();
+        }
+    }
+
+    function resetTags() {
+        // Renamed to resetAllSelection but keeping old function name just in case? 
+        // No, user wanted "Reset" button near search to work as search reset.
+        // But we might need a way to clear selection? The requirement didn't specify.
+        // Let's assume the button on UI is "Reset Search".
+        // The original resetTags was:
+        selectedTags.clear();
+        updateSelectedPreview();
+        exitSearchMode(); // Also clear search view
+    }
+
+    function skipTagging() {
+        showToast("已确认：暂无标签");
+        setTimeout(() => {
+            alert("流程演示结束：患者入组成功（无标签）。");
+            location.reload();
+        }, 1500);
+    }
+
+    function finishTagging() {
+        if (selectedTags.size === 0) {
+            showToast("未选择标签<br>请点击“暂无标签”");
+            return;
+        }
+        showToast("该患者入组已通过，<br>标签已保存。");
+        // Reset or navigate away logic
+        setTimeout(() => {
+            alert("流程演示结束：患者入组成功并已打标签。");
+            location.reload();
+        }, 1500);
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerHTML = msg;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2000);
+    }
+</script>
+
+</body>
+</html>
